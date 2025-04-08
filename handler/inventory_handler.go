@@ -18,6 +18,7 @@ type InventoryHandler struct {
 func NewInventoryHandler(service *service.ProductService) *InventoryHandler {
 	return &InventoryHandler{Service: service}
 }
+
 // CreateProduct handles product creation
 func (h *InventoryHandler) CreateProduct(c *gin.Context) {
 	var product model.Product
@@ -26,7 +27,6 @@ func (h *InventoryHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// Pass the pointer of product to the service
 	createdProduct, err := h.Service.CreateProduct(&product)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -36,8 +36,24 @@ func (h *InventoryHandler) CreateProduct(c *gin.Context) {
 	c.JSON(http.StatusCreated, createdProduct)
 }
 
-	c.JSON(http.StatusOK, product)
+// GetProduct handles getting a product by ID
+func (h *InventoryHandler) GetProduct(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
 
+	// Convert id to uint here
+	product, err := h.Service.GetProductByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
+}
 
 // UpdateProduct handles updating a product
 func (h *InventoryHandler) UpdateProduct(c *gin.Context) {
@@ -53,7 +69,7 @@ func (h *InventoryHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	updatedProduct, err := h.Service.UpdateProduct(uint(id), product)
+	updatedProduct, err := h.Service.UpdateProduct(uint(id), &product)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -83,7 +99,7 @@ func (h *InventoryHandler) DeleteProduct(c *gin.Context) {
 func (h *InventoryHandler) ListProducts(c *gin.Context) {
 	products, err := h.Service.ListProducts()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve products: " + err.Error()})
 		return
 	}
 

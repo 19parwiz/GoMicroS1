@@ -12,19 +12,27 @@ import (
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	router := gin.Default()
 
-	// Initialize repository and service
-	productRepo := repository.NewProductRepository(db) // Now passing db to the repository
+	// Product wiring
+	productRepo := repository.NewProductRepository(db)
 	productService := service.NewProductService(productRepo)
-
-	// Initialize handler
 	inventoryHandler := handler.NewInventoryHandler(productService)
 
-	// Routes
 	router.POST("/products", inventoryHandler.CreateProduct)
 	router.GET("/products/:id", inventoryHandler.GetProduct)
 	router.PATCH("/products/:id", inventoryHandler.UpdateProduct)
 	router.DELETE("/products/:id", inventoryHandler.DeleteProduct)
 	router.GET("/products", inventoryHandler.ListProducts)
+
+	// Category wiring — Moved inside the function
+	categoryRepo := repository.NewCategoryRepository(db)
+	categoryService := service.NewCategoryService(categoryRepo)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+
+	router.POST("/categories", categoryHandler.CreateCategory)
+	router.GET("/categories/:id", categoryHandler.GetCategoryByID)
+	router.PATCH("/categories/:id", categoryHandler.UpdateCategory)
+	router.DELETE("/categories/:id", categoryHandler.DeleteCategory)
+	router.GET("/categories", categoryHandler.GetAllCategories)
 
 	return router
 }
