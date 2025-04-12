@@ -15,15 +15,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	// Product wiring
 	productRepo := repository.NewProductRepository(db)
 	productService := service.NewProductService(productRepo)
-	inventoryHandler := handler.NewInventoryHandler(productService)
 
-	router.POST("/products", inventoryHandler.CreateProduct)
-	router.GET("/products/:id", inventoryHandler.GetProduct)
-	router.PATCH("/products/:id", inventoryHandler.UpdateProduct)
-	router.DELETE("/products/:id", inventoryHandler.DeleteProduct)
-	router.GET("/products", inventoryHandler.ListProducts)
+	productHandler := handler.NewProductHandler(productService)
 
-	// Category wiring — Moved inside the function
+	router.POST("/products", productHandler.CreateProduct)
+	router.GET("/products/:id", productHandler.GetProductByID)
+	router.PATCH("/products/:id", productHandler.UpdateProduct)
+	router.DELETE("/products/:id", productHandler.DeleteProduct)
+	router.GET("/products", productHandler.ListProducts)
+
+	// Category wiring
 	categoryRepo := repository.NewCategoryRepository(db)
 	categoryService := service.NewCategoryService(categoryRepo)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
@@ -33,6 +34,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	router.PATCH("/categories/:id", categoryHandler.UpdateCategory)
 	router.DELETE("/categories/:id", categoryHandler.DeleteCategory)
 	router.GET("/categories", categoryHandler.GetAllCategories)
+
+	// Order wiring
+	orderRepo := repository.NewOrderRepository(db) // This is now valid
+	orderService := service.NewOrderService(orderRepo)
+	orderHandler := handler.NewOrderHandler(orderService)
+
+	router.POST("/orders", orderHandler.CreateOrder)
+	router.GET("/orders/:id", orderHandler.GetOrder)
+	router.PATCH("/orders/:id", orderHandler.UpdateOrderStatus)
+	router.GET("/orders/user/:user_id", orderHandler.ListOrdersByUser)
 
 	return router
 }

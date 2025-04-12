@@ -64,3 +64,22 @@ func (r *ProductRepository) ListProducts() ([]model.Product, error) {
 	}
 	return products, nil
 }
+
+func (r *ProductRepository) FilterProducts(category string, minPrice, maxPrice float64, page, limit int) ([]model.Product, error) {
+	var products []model.Product
+	query := r.DB
+
+	if category != "" {
+		query = query.Where("category_id = ?", category)
+	}
+	if minPrice > 0 {
+		query = query.Where("price >= ?", minPrice)
+	}
+	if maxPrice > 0 {
+		query = query.Where("price <= ?", maxPrice)
+	}
+
+	offset := (page - 1) * limit
+	err := query.Offset(offset).Limit(limit).Find(&products).Error
+	return products, err
+}

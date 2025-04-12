@@ -7,16 +7,14 @@ import (
 )
 
 func main() {
-	// Initialize the database connection
-	db, err := config.InitDatabase()
-	if err != nil {
-		log.Fatalf("Could not connect to database: %v", err)
-		return
-	}
+	// Connect to the database using the ConnectDB method from config package
+	db := config.ConnectDB()
 
-	// Setup the router and pass the db connection
-	r := router.SetupRouter(db) // Passing db to the router
+	// Use db to initialize the router
+	r := router.SetupRouter(db)
 
 	// Start the server
-	r.Run(":8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Error starting the server:", err)
+	}
 }

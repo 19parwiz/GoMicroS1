@@ -95,11 +95,16 @@ func (h *InventoryHandler) DeleteProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted"})
 }
 
-// ListProducts handles listing all products
 func (h *InventoryHandler) ListProducts(c *gin.Context) {
-	products, err := h.Service.ListProducts()
+	category := c.Query("category")
+	minPrice, _ := strconv.ParseFloat(c.DefaultQuery("minPrice", "0"), 64)
+	maxPrice, _ := strconv.ParseFloat(c.DefaultQuery("maxPrice", "0"), 64)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	products, err := h.Service.FilterProducts(category, minPrice, maxPrice, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve products: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch products"})
 		return
 	}
 

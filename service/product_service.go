@@ -59,3 +59,7 @@ func (s *ProductService) ListProducts() ([]model.Product, error) {
 	}
 	return products, nil
 }
+
+func (s *ProductService) FilterProducts(category string, minPrice, maxPrice float64, page, limit int) ([]model.Product, error) {
+	return s.Repo.FilterProducts(category, minPrice, maxPrice, page, limit)
+}
