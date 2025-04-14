@@ -2,13 +2,20 @@ package model
 
 import "time"
 
-// Order represents an order in the system
 type Order struct {
-	ID         int       `json:"id" db:"id"`
-	UserID     int       `json:"user_id" db:"user_id"`
-	Status     string    `json:"status" db:"status"` // e.g., "pending", "completed", "cancelled"
-	Products   []Product `json:"products"`           // Product details associated with the order
-	TotalPrice float64   `json:"total_price" db:"total_price"`
-	CreatedAt  time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+	ID         int         `json:"id" gorm:"primaryKey"`
+	UserID     int         `json:"user_id"`
+	Status     string      `json:"status"`
+	Items      []OrderItem `json:"items" gorm:"foreignKey:OrderID"` // Must be "Items" (not "Products")
+	TotalPrice float64     `json:"total_price"`
+	CreatedAt  time.Time   `json:"created_at"`
+	UpdatedAt  time.Time   `json:"updated_at"`
+}
+
+type OrderItem struct {
+	ID        int     `json:"id" gorm:"primaryKey"`
+	OrderID   int     `json:"order_id"`
+	ProductID int     `json:"product_id"`
+	Quantity  int     `json:"quantity"`
+	UnitPrice float64 `json:"unit_price"`
 }

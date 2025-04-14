@@ -15,7 +15,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	// Product wiring
 	productRepo := repository.NewProductRepository(db)
 	productService := service.NewProductService(productRepo)
-
 	productHandler := handler.NewProductHandler(productService)
 
 	router.POST("/products", productHandler.CreateProduct)
@@ -36,8 +35,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	router.GET("/categories", categoryHandler.GetAllCategories)
 
 	// Order wiring
-	orderRepo := repository.NewOrderRepository(db) // This is now valid
-	orderService := service.NewOrderService(orderRepo)
+	orderRepo := repository.NewOrderRepository(db)     // Corrected: orderRepo is passed here
+	orderService := service.NewOrderService(orderRepo) // Corrected: Pass orderRepo to NewOrderService
 	orderHandler := handler.NewOrderHandler(orderService)
 
 	router.POST("/orders", orderHandler.CreateOrder)

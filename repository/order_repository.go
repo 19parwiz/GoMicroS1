@@ -2,54 +2,67 @@ package repository
 
 import (
 	"ecomventory/model"
-	"fmt"
+
 	"gorm.io/gorm"
 )
 
-// OrderRepository handles the CRUD operations for orders in the database
 type OrderRepository struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
-// NewOrderRepository creates a new order repository with a GORM DB instance
 func NewOrderRepository(db *gorm.DB) *OrderRepository {
-	return &OrderRepository{DB: db}
+	return &OrderRepository{db: db}
 }
 
-// CreateOrder saves a new order to the database
+// CreateOrder creates an order and its items in a transaction
 func (r *OrderRepository) CreateOrder(order *model.Order) error {
-	err := r.DB.Create(order).Error
-	if err != nil {
-		return fmt.Errorf("could not insert order: %w", err)
-	}
-	return nil
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Save the order first to generate ID
+		if err := tx.Create(order).Error; err != nil {
+			return err
+		}
+
+		// 2. Save all order items with the OrderID
+		for i := range order.Items {
+			order.Items[i].ID = 0
+			order.Items[i].OrderID = order.ID
+			if err := tx.Create(&order.Items[i]).Error; err != nil {
+				return err
+			}
+		}
+
+		// 3. Calculate and update total price (optional)
+		var total float64
+		for _, item := range order.Items {
+			total += item.UnitPrice * float64(item.Quantity)
+		}
+		return tx.Model(order).Update("total_price", total).Error
+	})
 }
 
-// GetOrderByID retrieves an order by its ID
+// GetOrderByID fetches an order with its items
 func (r *OrderRepository) GetOrderByID(id int) (*model.Order, error) {
 	var order model.Order
-	err := r.DB.First(&order, id).Error
-	if err != nil {
-		return nil, fmt.Errorf("could not get order by id: %w", err)
-	}
-	return &order, nil
+	err := r.db.
+		Preload("Items"). // Eager load items
+		First(&order, id).Error
+	return &order, err
 }
 
-// UpdateOrder updates an existing order in the database
-func (r *OrderRepository) UpdateOrder(order *model.Order) error {
-	err := r.DB.Save(order).Error
-	if err != nil {
-		return fmt.Errorf("could not update order: %w", err)
-	}
-	return nil
+// UpdateOrderStatus updates only the status field of the order
+func (r *OrderRepository) UpdateOrderStatus(id int, status string) error {
+	return r.db.
+		Model(&model.Order{}).
+		Where("id = ?", id).
+		Update("status", status).Error
 }
 
-// ListOrdersByUser retrieves all orders for a given user
+// ListOrdersByUser gets all orders for a user with their items
 func (r *OrderRepository) ListOrdersByUser(userID int) ([]model.Order, error) {
 	var orders []model.Order
-	err := r.DB.Where("user_id = ?", userID).Find(&orders).Error
-	if err != nil {
-		return nil, fmt.Errorf("could not list orders by user: %w", err)
-	}
-	return orders, nil
+	err := r.db.
+		Preload("Items").             // Eager load items
+		Where("user_id = ?", userID). // Search for orders by user ID
+		Find(&orders).Error
+	return orders, err
 }
